@@ -25,6 +25,36 @@ vidtoolz install vidtoolz-colored-textclip
 type ``vid textclip --help`` to get help
 
 
+```
+usage: vid textclip [-h] [-f FONT] [-fs FONTSIZE] [-d DURATION]
+                    [-fd FADE_DURATION] [-tc TEXT_COLOR] [-bg BG_COLOR]
+                    [-s SIZE] [-o OUTPUT] [--fps FPS]
+                    text
+
+Create a color clip with overlaid text
+
+positional arguments:
+  text                  Text to display.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FONT, --font FONT  Font name to use.
+  -fs FONTSIZE, --fontsize FONTSIZE
+                        Font size.
+  -d DURATION, --duration DURATION
+                        Duration of video in seconds.
+  -fd FADE_DURATION, --fade-duration FADE_DURATION
+                        Fade-in/out duration.
+  -tc TEXT_COLOR, --text-color TEXT_COLOR
+                        Text color.
+  -bg BG_COLOR, --bg-color BG_COLOR
+                        Background color as R,G,B.
+  -s SIZE, --size SIZE  Video size as width,height.
+  -o OUTPUT, --output OUTPUT
+                        Output video file name.
+  --fps FPS             Frames per second.
+
+```
 
 ## Development
 

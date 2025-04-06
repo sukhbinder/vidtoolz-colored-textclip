@@ -87,14 +87,14 @@ def create_parser(subparser):
         help="Duration of video in seconds.",
     )
     parser.add_argument(
-        "-fd", "--fade_duration", type=float, default=1.0, help="Fade-in/out duration."
+        "-fd", "--fade-duration", type=float, default=1.0, help="Fade-in/out duration."
     )
     parser.add_argument(
-        "-tc", "--text_color", type=str, default="white", help="Text color."
+        "-tc", "--text-color", type=str, default="white", help="Text color."
     )
     parser.add_argument(
         "-bg",
-        "--bg_color",
+        "--bg-color",
         type=parse_color,
         default=(0, 0, 0),
         help="Background color as R,G,B.",

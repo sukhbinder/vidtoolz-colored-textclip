@@ -85,7 +85,7 @@ def test_create_text_colorclip_mocks_called(
     assert result == "final_video_clip_with_audio"
     ColorClipMock.assert_called_once()
     TextClipMock.assert_called_once_with(
-        text=text, font_size=50, font="Arial", color="white", margin=(20, 20)
+        text=text, font_size=50, font="Arial", color="white", margin=(30, 30)
     )
     CompositeVideoClipMock.assert_called_once_with([mock_bg_clip, mock_text_clip])
     AudioFileClipMock.assert_called_once()

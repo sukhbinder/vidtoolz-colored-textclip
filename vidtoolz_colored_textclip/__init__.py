@@ -35,6 +35,7 @@ def create_text_colorclip(
     fade_duration=1.0,
     duration=5.0,
     audio_volume=0.01,
+    padding=30,
 ):
     """
     Create a color clip with overlaid text, both fading in and out.
@@ -49,7 +50,7 @@ def create_text_colorclip(
             font_size=fontsize,
             font=font,
             color=text_color,
-            margin=(20, 20),
+            margin=(padding, padding),
         )
         .with_duration(duration)
         .with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
@@ -86,7 +87,7 @@ def create_parser(subparser):
         "--font",
         type=str,
         default="Arial",
-        help="Font name to use. (default: %(default)s)",
+        help="Font name to use. Ex Noteworthy, Melno, Papyrus, Zapfino (default: %(default)s)",
     )
     parser.add_argument(
         "-fs",
@@ -141,6 +142,13 @@ def create_parser(subparser):
         "--fps", type=int, default=60, help="Frames per second. (default: %(default)s)"
     )
 
+    parser.add_argument(
+        "-p",
+        "--padding",
+        type=int,
+        default=30,
+        help="Padding on text (default: %(default)s)",
+    )
     return parser
 
 
@@ -167,6 +175,7 @@ class ViztoolzPlugin:
             fontsize=args.fontsize,
             fade_duration=args.fade_duration,
             duration=args.duration,
+            padding=args.padding,
         )
 
         clip.write_videofile(

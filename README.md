@@ -28,7 +28,7 @@ type ``vid textclip --help`` to get help
 ```
 usage: vid textclip [-h] [-f FONT] [-fs FONTSIZE] [-d DURATION]
                     [-fd FADE_DURATION] [-tc TEXT_COLOR] [-bg BG_COLOR]
-                    [-s SIZE] [-o OUTPUT] [--fps FPS]
+                    [-s SIZE] [-o OUTPUT] [--fps FPS] [-p PADDING]
                     text
 
 Create a color clip with overlaid text
@@ -38,21 +38,24 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FONT, --font FONT  Font name to use.
+  -f FONT, --font FONT  Font name to use. Ex Noteworthy, Melno, Papyrus,
+                        Zapfino (default: Arial)
   -fs FONTSIZE, --fontsize FONTSIZE
-                        Font size.
+                        Font size. (default: 80)
   -d DURATION, --duration DURATION
-                        Duration of video in seconds.
+                        Duration of video in seconds. (default: 5.0)
   -fd FADE_DURATION, --fade-duration FADE_DURATION
-                        Fade-in/out duration.
+                        Fade-in/out duration. (default: 1.0)
   -tc TEXT_COLOR, --text-color TEXT_COLOR
-                        Text color.
+                        Text color. (default: white)
   -bg BG_COLOR, --bg-color BG_COLOR
-                        Background color as R,G,B.
-  -s SIZE, --size SIZE  Video size as width,height.
+                        Background color as R,G,B. (default: (0, 0, 0))
+  -s SIZE, --size SIZE  Video size as width,height. (default: 1920,1080)
   -o OUTPUT, --output OUTPUT
-                        Output video file name.
-  --fps FPS             Frames per second.
+                        Output video file name. (default: None)
+  --fps FPS             Frames per second. (default: 60)
+  -p PADDING, --padding PADDING
+                        Padding on text (default: 30)
 
 ```
 

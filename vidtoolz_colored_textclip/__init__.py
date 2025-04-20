@@ -44,7 +44,13 @@ def create_text_colorclip(
     )
 
     text_clip = (
-        TextClip(text=text, font_size=fontsize, font=font, color=text_color, margin=(20, 20),)
+        TextClip(
+            text=text,
+            font_size=fontsize,
+            font=font,
+            color=text_color,
+            margin=(20, 20),
+        )
         .with_duration(duration)
         .with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
         .with_position("center")
@@ -76,9 +82,19 @@ def create_parser(subparser):
     # Add subprser arguments here.
     parser.add_argument("text", type=str, help="Text to display.")
     parser.add_argument(
-        "-f", "--font", type=str, default="Arial", help="Font name to use. (default: %(default)s)"
+        "-f",
+        "--font",
+        type=str,
+        default="Arial",
+        help="Font name to use. (default: %(default)s)",
     )
-    parser.add_argument("-fs", "--fontsize", type=int, default=80, help="Font size. (default: %(default)s)")
+    parser.add_argument(
+        "-fs",
+        "--fontsize",
+        type=int,
+        default=80,
+        help="Font size. (default: %(default)s)",
+    )
     parser.add_argument(
         "-d",
         "--duration",
@@ -87,10 +103,18 @@ def create_parser(subparser):
         help="Duration of video in seconds. (default: %(default)s)",
     )
     parser.add_argument(
-        "-fd", "--fade-duration", type=float, default=1.0, help="Fade-in/out duration. (default: %(default)s)"
+        "-fd",
+        "--fade-duration",
+        type=float,
+        default=1.0,
+        help="Fade-in/out duration. (default: %(default)s)",
     )
     parser.add_argument(
-        "-tc", "--text-color", type=str, default="white", help="Text color. (default: %(default)s)"
+        "-tc",
+        "--text-color",
+        type=str,
+        default="white",
+        help="Text color. (default: %(default)s)",
     )
     parser.add_argument(
         "-bg",
@@ -107,9 +131,15 @@ def create_parser(subparser):
         help="Video size as width,height. (default: %(default)s)",
     )
     parser.add_argument(
-        "-o", "--output", type=str, default=None, help="Output video file name. (default: %(default)s)"
+        "-o",
+        "--output",
+        type=str,
+        default=None,
+        help="Output video file name. (default: %(default)s)",
     )
-    parser.add_argument("--fps", type=int, default=60, help="Frames per second. (default: %(default)s)")
+    parser.add_argument(
+        "--fps", type=int, default=60, help="Frames per second. (default: %(default)s)"
+    )
 
     return parser
 
@@ -139,7 +169,12 @@ class ViztoolzPlugin:
             duration=args.duration,
         )
 
-        clip.write_videofile(output, fps=args.fps, audio_codec="aac",  codec="libx264",)
+        clip.write_videofile(
+            output,
+            fps=args.fps,
+            audio_codec="aac",
+            codec="libx264",
+        )
 
     def hello(self, args):
         # this routine will be called when "vidtoolz "textclip is called."

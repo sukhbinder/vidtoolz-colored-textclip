@@ -3,6 +3,7 @@ import argparse
 from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip
 import re
 import os
+import platform
 
 
 def generate_output_filename(text, output=None):
@@ -81,26 +82,27 @@ def create_parser(subparser):
         "textclip", description="Create a color clip with overlaid text"
     )
     # Add subprser arguments here.
+    default_font = "Papyrus" if platform.system() == "Darwin" else "Arial"
     parser.add_argument("text", type=str, help="Text to display.")
     parser.add_argument(
         "-f",
         "--font",
         type=str,
-        default="Arial",
+        default=default_font,
         help="Font name to use. Ex Noteworthy, Melno, Papyrus, Zapfino (default: %(default)s)",
     )
     parser.add_argument(
         "-fs",
         "--fontsize",
         type=int,
-        default=80,
+        default=100,
         help="Font size. (default: %(default)s)",
     )
     parser.add_argument(
         "-d",
         "--duration",
         type=float,
-        default=5.0,
+        default=4.0,
         help="Duration of video in seconds. (default: %(default)s)",
     )
     parser.add_argument(

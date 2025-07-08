@@ -14,9 +14,9 @@ def test_create_parser():
 
     result = parser.parse_args(["hello"])
     assert result.text == "hello"
-    assert result.duration == 5.0
+    assert result.duration == 4.0
     assert result.font == "Arial"
-    assert result.fontsize == 80
+    assert result.fontsize == 100
     assert result.text_color == "white"
     assert result.fade_duration == 1.0
     assert result.bg_color == (0, 0, 0)

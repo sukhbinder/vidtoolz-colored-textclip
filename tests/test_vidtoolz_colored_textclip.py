@@ -4,6 +4,7 @@ import vidtoolz_colored_textclip as w
 from unittest import mock
 
 from argparse import ArgumentParser
+import platform
 
 
 def test_create_parser():
@@ -11,11 +12,12 @@ def test_create_parser():
     parser = w.create_parser(subparser)
 
     assert parser is not None
+    default_font = "Papyrus" if platform.system() == "Darwin" else "Arial"
 
     result = parser.parse_args(["hello"])
     assert result.text == "hello"
     assert result.duration == 4.0
-    assert result.font == "Arial"
+    assert result.font == default_font
     assert result.fontsize == 100
     assert result.text_color == "white"
     assert result.fade_duration == 1.0
@@ -85,7 +87,13 @@ def test_create_text_colorclip_mocks_called(
     assert result == "final_video_clip_with_audio"
     ColorClipMock.assert_called_once()
     TextClipMock.assert_called_once_with(
-        text=text, font_size=50, font="Arial", color="white", margin=(30, 30)
+        text=text,
+        font_size=50,
+        font="Arial",
+        color="white",
+        margin=(30, 30),
+        method="caption",
+        size=(1920, 1080),
     )
     CompositeVideoClipMock.assert_called_once_with([mock_bg_clip, mock_text_clip])
     AudioFileClipMock.assert_called_once()

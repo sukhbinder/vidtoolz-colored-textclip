@@ -4,6 +4,8 @@ from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip
 import re
 import os
 import platform
+from PIL import ImageFont, ImageDraw, Image
+import textwrap
 
 
 def generate_output_filename(text, output=None):
@@ -52,6 +54,8 @@ def create_text_colorclip(
             font=font,
             color=text_color,
             margin=(padding, padding),
+            method="caption",
+            size=size,
         )
         .with_duration(duration)
         .with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
@@ -65,6 +69,35 @@ def create_text_colorclip(
     final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip
+
+
+def get_fitting_fontsize_multiline(
+    text, font_path, max_width, padding=0, max_fontsize=200, min_fontsize=10
+):
+    """
+    Determine the largest font size such that the multiline text fits within max_width.
+    """
+    for fontsize in range(max_fontsize, min_fontsize, -1):
+        try:
+            font = ImageFont.truetype(font_path, fontsize)
+        except OSError:
+            font = ImageFont.load_default()
+
+        # Create dummy image to measure text
+        image = Image.new("RGB", (max_width, 1000))
+        draw = ImageDraw.Draw(image)
+
+        wrapped_text = textwrap.fill(text, width=20)
+        lines = wrapped_text.splitlines()
+        max_line_width = 0
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=font)
+            line_width = bbox[2] - bbox[0]
+            max_line_width = max(max_line_width, line_width)
+
+        if max_line_width + 2 * padding <= max_width:
+            return fontsize
+    return min_fontsize
 
 
 def parse_color(color_str):
@@ -168,13 +201,21 @@ class ViztoolzPlugin:
         width, height = map(int, args.size.split(","))
         output = generate_output_filename(args.text, args.output)
 
+        fontsize = get_fitting_fontsize_multiline(
+            text=args.text,
+            font_path=args.font,
+            max_width=width,
+            padding=args.padding,
+            max_fontsize=args.fontsize,  # start from user's preferred size
+        )
+
         clip = create_text_colorclip(
             text=args.text,
             size=(width, height),
             color=args.bg_color,
             text_color=args.text_color,
             font=args.font,
-            fontsize=args.fontsize,
+            fontsize=fontsize,
             fade_duration=args.fade_duration,
             duration=args.duration,
             padding=args.padding,

@@ -1,12 +1,25 @@
 import vidtoolz
 import argparse
-from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip
+from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip, CompositeAudioClip
 import re
 import os
 import platform
 from PIL import ImageFont, ImageDraw, Image
 import textwrap
 
+
+def get_audio_clip(duration, audio_volume):
+    audio_path = os.path.join(os.path.dirname(__file__), "assets", "charkha.mp3")
+    audio_clip = AudioFileClip(audio_path).subclipped(0, duration)
+    audio_clip = audio_clip.with_volume_scaled(audio_volume)
+    return audio_clip
+
+def get_effect_clip():
+    """
+    Load the Sharpwipereverb sound effect.
+    """
+    effect_path = os.path.join(os.path.dirname(__file__), "assets", "Sharpwipereverb.m4a")
+    return AudioFileClip(effect_path)
 
 def generate_output_filename(text, output=None):
     """
@@ -39,6 +52,8 @@ def create_text_colorclip(
     duration=5.0,
     audio_volume=0.01,
     padding=30,
+    expand=False,
+    effect=False,
 ):
     """
     Create a color clip with overlaid text, both fading in and out.
@@ -62,10 +77,19 @@ def create_text_colorclip(
         .with_position("center")
     )
 
+    # Apply expanding effect if enabled
+    if expand:
+        # Slowly scale text from 90% to 110% of original size
+        text_clip = text_clip.resized(lambda t: 1.0 + 0.1 * (t / duration))
     final_clip = CompositeVideoClip([bg_clip, text_clip])
-    audio_path = os.path.join(os.path.dirname(__file__), "assets", "charkha.mp3")
-    audio_clip = AudioFileClip(audio_path).subclipped(0, duration)
-    audio_clip = audio_clip.with_volume_scaled(audio_volume)
+    audio_clip = get_audio_clip(duration, audio_volume)
+
+    # If effect is enabled, mix SFX at start
+    if effect:
+        effect_clip = get_effect_clip()
+        # Combine both effect and background audio
+        audio_clip = CompositeAudioClip([effect_clip, audio_clip.with_start(effect_clip.duration)])
+
     final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip
@@ -87,7 +111,7 @@ def get_fitting_fontsize_multiline(
         image = Image.new("RGB", (max_width, 1000))
         draw = ImageDraw.Draw(image)
 
-        wrapped_text = textwrap.fill(text, width=20)
+        wrapped_text = textwrap.fill(text, width=40)
         lines = wrapped_text.splitlines()
         max_line_width = 0
         for line in lines:
@@ -184,6 +208,20 @@ def create_parser(subparser):
         default=30,
         help="Padding on text (default: %(default)s)",
     )
+
+    parser.add_argument(
+        "-e",
+        "--expand",
+        action="store_true",
+        help="If set, the text will slowly enlarge during the video."
+    )
+
+    parser.add_argument(
+        "-ef",
+        "--effect",
+        action="store_true",
+        help="If set, adds Sharpwipereverb sound effect at the start."
+    )
     return parser
 
 
@@ -219,6 +257,8 @@ class ViztoolzPlugin:
             fade_duration=args.fade_duration,
             duration=args.duration,
             padding=args.padding,
+            expand=args.expand,
+            effect=args.effect,
         )
 
         clip.write_videofile(

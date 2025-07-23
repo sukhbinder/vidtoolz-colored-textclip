@@ -1,16 +1,12 @@
 [project]
 name = "vidtoolz-colored-textclip"
-version = "0.0.1"
+version = "0.0.2"
 description = "Create a color clip with overlaid text"
 readme = "README.md"
-authors = [{name = "Sukhbinder Singh"}]
-license = {text = "Apache-2.0"}
-classifiers = [
-    "License :: OSI Approved :: Apache Software License"
-]
-dependencies = [
-    "vidtoolz",
-]
+authors = [{ name = "Sukhbinder Singh" }]
+license = { text = "Apache-2.0" }
+classifiers = ["License :: OSI Approved :: Apache Software License"]
+dependencies = ["vidtoolz"]
 
 [project.urls]
 Homepage = "https://github.com/sukhbinder/vidtoolz-colored-textclip"

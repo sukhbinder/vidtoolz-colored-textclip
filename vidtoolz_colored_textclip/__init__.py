@@ -1,11 +1,32 @@
 import vidtoolz
 import argparse
-from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip, CompositeAudioClip
+from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip, CompositeAudioClip, ImageClip
 import re
 import os
 import platform
 from PIL import ImageFont, ImageDraw, Image
 import textwrap
+import numpy as np
+
+
+def create_gradient_clip(size, colors, duration):
+    """
+    Create a video clip with a linear gradient background.
+    """
+    width, height = size
+    gradient = np.zeros((height, width, 3), dtype=np.uint8)
+    for y in range(height):
+        interp_factor = y / (height - 1)
+        color_index = int(interp_factor * (len(colors) - 1))
+        local_interp = (interp_factor * (len(colors) - 1)) - color_index
+
+        c1 = np.array(colors[color_index])
+        c2 = np.array(colors[min(color_index + 1, len(colors) - 1)])
+
+        color = c1 * (1 - local_interp) + c2 * local_interp
+        gradient[y, :, :] = color.astype(np.uint8)
+
+    return ImageClip(gradient).with_duration(duration)
 
 
 def get_audio_clip(duration, audio_volume):
@@ -45,6 +66,7 @@ def create_text_colorclip(
     text,
     size=(1920, 1080),
     color=(0, 0, 0),
+    gradient_colors=None,
     text_color="white",
     font="Arial",
     fontsize=50,
@@ -58,9 +80,12 @@ def create_text_colorclip(
     """
     Create a color clip with overlaid text, both fading in and out.
     """
-    bg_clip = ColorClip(size, color=color, duration=duration).with_effects(
-        [vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)]
-    )
+    if gradient_colors:
+        bg_clip = create_gradient_clip(size, gradient_colors, duration)
+    else:
+        bg_clip = ColorClip(size, color=color, duration=duration)
+
+    bg_clip = bg_clip.with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
 
     text_clip = (
         TextClip(
@@ -134,6 +159,24 @@ def parse_color(color_str):
         raise argparse.ArgumentTypeError("Color must be in R,G,B format (e.g. 255,0,0)")
 
 
+def parse_gradient_colors(color_str):
+    """
+    Convert a string of semicolon-separated RGB colors to a list of tuples.
+    e.g., "255,0,0;0,255,0" -> [(255,0,0), (0,255,0)]
+    """
+    try:
+        colors = []
+        for c in color_str.split(";"):
+            rgb = tuple(map(int, c.split(",")))
+            if len(rgb) != 3:
+                raise ValueError
+            colors.append(rgb)
+        return colors
+    except:
+        raise argparse.ArgumentTypeError(
+            "Gradient colors must be in R,G,B;R,G,B format (e.g. 255,0,0;0,255,0)"
+        )
+
 def create_parser(subparser):
     parser = subparser.add_parser(
         "textclip", description="Create a color clip with overlaid text"
@@ -182,6 +225,13 @@ def create_parser(subparser):
         type=parse_color,
         default=(0, 0, 0),
         help="Background color as R,G,B. (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-gc",
+        "--gradient-colors",
+        type=parse_gradient_colors,
+        default=None,
+        help="Semicolon-separated list of R,G,B colors for the gradient background. e.g. 255,0,0;0,0,255",
     )
     parser.add_argument(
         "-s",
@@ -251,6 +301,7 @@ class ViztoolzPlugin:
             text=args.text,
             size=(width, height),
             color=args.bg_color,
+            gradient_colors=args.gradient_colors,
             text_color=args.text_color,
             font=args.font,
             fontsize=fontsize,

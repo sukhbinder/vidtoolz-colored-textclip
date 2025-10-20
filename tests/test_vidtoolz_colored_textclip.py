@@ -55,6 +55,15 @@ def test_generate_output_filename_with_leading_trailing_spaces():
     assert w.generate_output_filename(text) == expected
 
 
+def test_parse_gradient_colors_valid():
+    assert w.parse_gradient_colors("255,0,0;0,255,0") == [(255, 0, 0), (0, 255, 0)]
+
+
+def test_parse_gradient_colors_invalid():
+    with pytest.raises(Exception):
+        w.parse_gradient_colors("255,0,0;0,255")
+
+
 # ---------- Tests for create_text_colorclip ----------
 
 
@@ -86,6 +95,57 @@ def test_create_text_colorclip_mocks_called(
 
     assert result == "final_video_clip_with_audio"
     ColorClipMock.assert_called_once()
+    TextClipMock.assert_called_once_with(
+        text=text,
+        font_size=50,
+        font="Arial",
+        color="white",
+        margin=(30, 30),
+        method="caption",
+        size=(1920, 1080),
+    )
+    CompositeVideoClipMock.assert_called_once_with([mock_bg_clip, mock_text_clip])
+    AudioFileClipMock.assert_called_once()
+    mock_final_clip.with_audio.assert_called_once_with(mock_audio_clip)
+
+
+@mock.patch("vidtoolz_colored_textclip.create_gradient_clip")
+@mock.patch("vidtoolz_colored_textclip.AudioFileClip")
+@mock.patch("vidtoolz_colored_textclip.CompositeVideoClip")
+@mock.patch("vidtoolz_colored_textclip.TextClip")
+@mock.patch("vidtoolz_colored_textclip.ColorClip")
+def test_create_text_colorclip_with_gradient(
+    ColorClipMock,
+    TextClipMock,
+    CompositeVideoClipMock,
+    AudioFileClipMock,
+    create_gradient_clip_mock,
+):
+    mock_bg_clip = mock.Mock()
+    mock_text_clip = mock.Mock()
+    mock_final_clip = mock.Mock()
+    mock_audio_clip = mock.Mock()
+
+    # Setup return values
+    create_gradient_clip_mock.return_value.with_effects.return_value = mock_bg_clip
+    TextClipMock.return_value.with_duration.return_value.with_effects.return_value.with_position.return_value = (
+        mock_text_clip
+    )
+    CompositeVideoClipMock.return_value = mock_final_clip
+    AudioFileClipMock.return_value.subclipped.return_value.with_volume_scaled.return_value = (
+        mock_audio_clip
+    )
+    mock_final_clip.with_audio.return_value = "final_video_clip_with_audio"
+
+    text = "Test Clip"
+    gradient_colors = [(255, 0, 0), (0, 0, 255)]
+    result = w.create_text_colorclip(text, gradient_colors=gradient_colors)
+
+    assert result == "final_video_clip_with_audio"
+    create_gradient_clip_mock.assert_called_once_with(
+        (1920, 1080), gradient_colors, 5.0
+    )
+    ColorClipMock.assert_not_called()
     TextClipMock.assert_called_once_with(
         text=text,
         font_size=50,

@@ -1,12 +1,21 @@
-import vidtoolz
 import argparse
-from moviepy import ColorClip, TextClip, CompositeVideoClip, vfx, AudioFileClip, CompositeAudioClip, ImageClip
-import re
 import os
 import platform
-from PIL import ImageFont, ImageDraw, Image
+import re
 import textwrap
+
 import numpy as np
+import vidtoolz
+from moviepy import (
+    AudioFileClip,
+    ColorClip,
+    CompositeAudioClip,
+    CompositeVideoClip,
+    ImageClip,
+    TextClip,
+    vfx,
+)
+from PIL import Image, ImageDraw, ImageFont
 
 
 def create_gradient_clip(size, colors, duration):
@@ -35,12 +44,16 @@ def get_audio_clip(duration, audio_volume):
     audio_clip = audio_clip.with_volume_scaled(audio_volume)
     return audio_clip
 
+
 def get_effect_clip():
     """
     Load the Sharpwipereverb sound effect.
     """
-    effect_path = os.path.join(os.path.dirname(__file__), "assets", "Sharpwipereverb.m4a")
+    effect_path = os.path.join(
+        os.path.dirname(__file__), "assets", "Sharpwipereverb.m4a"
+    )
     return AudioFileClip(effect_path)
+
 
 def generate_output_filename(text, output=None):
     """
@@ -85,7 +98,9 @@ def create_text_colorclip(
     else:
         bg_clip = ColorClip(size, color=color, duration=duration)
 
-    bg_clip = bg_clip.with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
+    bg_clip = bg_clip.with_effects(
+        [vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)]
+    )
 
     text_clip = (
         TextClip(
@@ -113,7 +128,9 @@ def create_text_colorclip(
     if effect:
         effect_clip = get_effect_clip()
         # Combine both effect and background audio
-        audio_clip = CompositeAudioClip([effect_clip, audio_clip.with_start(effect_clip.duration)])
+        audio_clip = CompositeAudioClip(
+            [effect_clip, audio_clip.with_start(effect_clip.duration)]
+        )
 
     final_clip = final_clip.with_audio(audio_clip)
 
@@ -121,7 +138,7 @@ def create_text_colorclip(
 
 
 def get_fitting_fontsize_multiline(
-    text, font_path, max_width, padding=0, max_fontsize=200, min_fontsize=10
+    text, font_path, max_width, padding=0, max_fontsize=300, min_fontsize=10
 ):
     """
     Determine the largest font size such that the multiline text fits within max_width.
@@ -167,7 +184,7 @@ def parse_gradient_colors(color_str):
     try:
         colors = []
         for c in color_str.split(";"):
-            rgb = tuple(map(int, c.split(",")))
+            rgb = tuple(map(int, c.split(" ")))
             if len(rgb) != 3:
                 raise ValueError
             colors.append(rgb)
@@ -176,6 +193,7 @@ def parse_gradient_colors(color_str):
         raise argparse.ArgumentTypeError(
             "Gradient colors must be in R,G,B;R,G,B format (e.g. 255,0,0;0,255,0)"
         )
+
 
 def create_parser(subparser):
     parser = subparser.add_parser(
@@ -195,21 +213,21 @@ def create_parser(subparser):
         "-fs",
         "--fontsize",
         type=int,
-        default=100,
+        default=250,
         help="Font size. (default: %(default)s)",
     )
     parser.add_argument(
         "-d",
         "--duration",
         type=float,
-        default=4.0,
+        default=3.0,
         help="Duration of video in seconds. (default: %(default)s)",
     )
     parser.add_argument(
         "-fd",
         "--fade-duration",
         type=float,
-        default=1.0,
+        default=0.5,
         help="Fade-in/out duration. (default: %(default)s)",
     )
     parser.add_argument(
@@ -263,14 +281,14 @@ def create_parser(subparser):
         "-e",
         "--expand",
         action="store_true",
-        help="If set, the text will slowly enlarge during the video."
+        help="If set, the text will slowly enlarge during the video.",
     )
 
     parser.add_argument(
         "-ef",
         "--effect",
         action="store_true",
-        help="If set, adds Sharpwipereverb sound effect at the start."
+        help="If set, adds Sharpwipereverb sound effect at the start.",
     )
     return parser
 

@@ -89,10 +89,19 @@ def create_text_colorclip(
     padding=30,
     expand=False,
     effect=False,
+    fps=60,
 ):
     """
     Create a color clip with overlaid text, both fading in and out.
     """
+
+    def scale_by_frame(get_frame, t):
+        total_frames = duration * fps
+        frame = int(round(t * fps))
+        progress = min(frame / total_frames, 1.0)
+        scale = 1.0 + 0.1 * progress
+        return scale
+
     if gradient_colors:
         bg_clip = create_gradient_clip(size, gradient_colors, duration)
     else:
@@ -120,18 +129,25 @@ def create_text_colorclip(
     # Apply expanding effect if enabled
     if expand:
         # Slowly scale text from 90% to 110% of original size
-        text_clip = text_clip.resized(lambda t: 1.0 + 0.1 * (t / duration))
-    final_clip = CompositeVideoClip([bg_clip, text_clip])
+        text_clip = text_clip.resized(
+            # lambda t: 1.0 + 0.1 * (round(t * fps) / (duration * fps))
+            lambda t: scale_by_frame(None, t)
+        )
+
+    bg_clip = bg_clip.with_fps(fps)
+    text_clip = text_clip.with_fps(fps)
+    final_clip = CompositeVideoClip([bg_clip, text_clip]).with_fps(fps)
     audio_clip = get_audio_clip(duration, audio_volume)
+    audio_clip = audio_clip.with_fps(44100)
 
     # If effect is enabled, mix SFX at start
     if effect:
         effect_clip = get_effect_clip()
+        effect_clip.with_fps(44100)
         # Combine both effect and background audio
-        audio_clip = CompositeAudioClip(
-            [effect_clip, audio_clip.with_start(effect_clip.duration)]
-        )
+        audio_clip = CompositeAudioClip([effect_clip, audio_clip])
 
+    audio_clip = audio_clip.with_fps(44100)
     final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip
@@ -328,6 +344,7 @@ class ViztoolzPlugin:
             padding=args.padding,
             expand=args.expand,
             effect=args.effect,
+            fps=args.fps,
         )
 
         clip.write_videofile(
@@ -335,6 +352,7 @@ class ViztoolzPlugin:
             fps=args.fps,
             audio_codec="aac",
             codec="libx264",
+            ffmpeg_params=["-pix_fmt", "yuv420p"],
         )
 
     def hello(self, args):

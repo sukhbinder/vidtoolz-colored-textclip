@@ -1,7 +1,6 @@
 import platform
-import sys
 from argparse import ArgumentParser
-from unittest import mock
+from pathlib import Path
 
 import pytest
 
@@ -67,6 +66,7 @@ def test_parse_gradient_colors_invalid():
 
 def test_realcase(tmpdir):
     outfile = tmpdir / "test.mp4"
+    fontpath = Path(__file__).parent / "Keyboard.ttf"
     argv = [
         "Sukhbinder Singh",
         "-e",
@@ -78,7 +78,7 @@ def test_realcase(tmpdir):
         "--fps",
         "10",
         "-f",
-        "Keyboard.ttf",
+        str(fontpath),
     ]
     subparser = ArgumentParser().add_subparsers()
     parser = w.create_parser(subparser)

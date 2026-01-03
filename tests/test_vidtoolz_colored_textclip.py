@@ -78,7 +78,7 @@ def test_realcase(tmpdir):
         "--fps",
         "10",
         "-f",
-        "Arial",
+        "Keyboard.ttf",
     ]
     subparser = ArgumentParser().add_subparsers()
     parser = w.create_parser(subparser)

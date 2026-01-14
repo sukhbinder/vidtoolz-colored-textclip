@@ -229,7 +229,7 @@ def create_parser(subparser):
         "-fs",
         "--fontsize",
         type=int,
-        default=250,
+        default=210,
         help="Font size. (default: %(default)s)",
     )
     parser.add_argument(

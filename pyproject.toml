@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [{ name = "Sukhbinder Singh" }]
 license = { text = "Apache-2.0" }
 classifiers = ["License :: OSI Approved :: Apache Software License"]
-dependencies = ["vidtoolz"]
+dependencies = ["vidtoolz", "numpy"]
 
 [project.urls]
 Homepage = "https://github.com/sukhbinder/vidtoolz-colored-textclip"

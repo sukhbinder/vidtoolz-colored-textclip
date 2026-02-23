@@ -1,6 +1,7 @@
 import argparse
 import os
 import platform
+import random
 import re
 import textwrap
 
@@ -89,6 +90,7 @@ def create_text_colorclip(
     padding=30,
     expand=False,
     effect=False,
+    glitch=False,
     fps=60,
 ):
     """
@@ -111,9 +113,23 @@ def create_text_colorclip(
         [vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)]
     )
 
+    # Calculate available width for text after accounting for padding
+    available_width = size[0] - 2 * padding
+
+    # Wrap text based on actual pixel width using PIL
+    try:
+        pil_font = ImageFont.truetype(font, fontsize)
+    except OSError:
+        pil_font = ImageFont.load_default()
+
+    temp_image = Image.new("RGB", (size[0], 1000))
+    temp_draw = ImageDraw.Draw(temp_image)
+    wrapped_lines = wrap_text_to_width(text, pil_font, temp_draw, available_width)
+    wrapped_text = "\n".join(wrapped_lines)
+
     text_clip = (
         TextClip(
-            text=text,
+            text=wrapped_text,
             font_size=fontsize,
             font=font,
             color=text_color,
@@ -147,10 +163,113 @@ def create_text_colorclip(
         # Combine both effect and background audio
         audio_clip = CompositeAudioClip([effect_clip, audio_clip])
 
+    # Apply glitch effect if enabled
+    if glitch:
+        final_clip = apply_glitch_effect(final_clip, glitch_intensity=20, fps=fps)
+
     audio_clip = audio_clip.with_fps(44100)
     final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip
+
+
+def apply_glitch_effect(clip, glitch_intensity=20, fps=60):
+    """
+    Apply a glitch effect to a video clip.
+    Creates random horizontal slices with displacement and color shifts.
+
+    Args:
+        clip: The video clip to apply the effect to.
+        glitch_intensity (int): Maximum pixel displacement for glitch effect.
+        fps (int): Frames per second of the video.
+
+    Returns:
+        The clip with glitch effect applied.
+    """
+    def glitch_frame(get_frame, t):
+        frame = get_frame(t)
+        height, width = frame.shape[:2]
+
+        # Apply glitch randomly (about 30% of frames)
+        if random.random() > 0.3:
+            return frame
+
+        # Create a copy of the frame
+        glitched = frame.copy()
+
+        # Number of horizontal slices
+        num_slices = random.randint(3, 8)
+
+        for _ in range(num_slices):
+            # Random slice height and position
+            slice_height = random.randint(5, height // 10)
+            y_start = random.randint(0, height - slice_height)
+            y_end = y_start + slice_height
+
+            # Random horizontal displacement
+            displacement = random.randint(-glitch_intensity, glitch_intensity)
+
+            # Get the slice
+            slice_data = glitched[y_start:y_end, :].copy()
+
+            # Apply displacement with wrap-around
+            if displacement > 0:
+                glitched[y_start:y_end, displacement:] = slice_data[:, :width - displacement]
+                glitched[y_start:y_end, :displacement] = slice_data[:, -displacement:]
+            elif displacement < 0:
+                displacement = abs(displacement)
+                glitched[y_start:y_end, :-displacement] = slice_data[:, displacement:]
+                glitched[y_start:y_end, -displacement:] = slice_data[:, :displacement]
+
+        # Add occasional color channel shift (RGB split effect)
+        if random.random() > 0.5:
+            channel_shift = random.randint(1, 5)
+            if random.random() > 0.5:
+                # Shift red channel
+                glitched[:, :, 0] = np.roll(glitched[:, :, 0], channel_shift, axis=1)
+            else:
+                # Shift blue channel
+                glitched[:, :, 2] = np.roll(glitched[:, :, 2], -channel_shift, axis=1)
+
+        return glitched
+
+    return clip.transform(glitch_frame)
+
+
+def wrap_text_to_width(text, font, draw, max_width):
+    """
+    Wrap text into multiple lines so that each line fits within max_width.
+
+    Args:
+        text (str): The text to wrap.
+        font: PIL ImageFont object.
+        draw: PIL ImageDraw object.
+        max_width (int): Maximum width in pixels for each line.
+
+    Returns:
+        list: List of wrapped lines.
+    """
+    lines = []
+    words = text.split()
+
+    if not words:
+        return lines
+
+    current_line = words[0]
+
+    for word in words[1:]:
+        test_line = current_line + " " + word
+        bbox = draw.textbbox((0, 0), test_line, font=font)
+        test_width = bbox[2] - bbox[0]
+
+        if test_width <= max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word
+
+    lines.append(current_line)
+    return lines
 
 
 def get_fitting_fontsize_multiline(
@@ -159,6 +278,9 @@ def get_fitting_fontsize_multiline(
     """
     Determine the largest font size such that the multiline text fits within max_width.
     """
+    # Fixed margin for text wrapping (20 pixels on each side)
+    wrap_margin = 20
+
     for fontsize in range(max_fontsize, min_fontsize, -1):
         try:
             font = ImageFont.truetype(font_path, fontsize)
@@ -169,10 +291,15 @@ def get_fitting_fontsize_multiline(
         image = Image.new("RGB", (max_width, 1000))
         draw = ImageDraw.Draw(image)
 
-        wrapped_text = textwrap.fill(text, width=40)
-        lines = wrapped_text.splitlines()
+        # Calculate available width for text wrapping after accounting for wrap margin
+        available_width = max_width - 2 * wrap_margin
+
+        # Wrap text based on actual pixel width
+        wrapped_lines = wrap_text_to_width(text, font, draw, available_width)
+
+        # Measure the maximum line width
         max_line_width = 0
-        for line in lines:
+        for line in wrapped_lines:
             bbox = draw.textbbox((0, 0), line, font=font)
             line_width = bbox[2] - bbox[0]
             max_line_width = max(max_line_width, line_width)
@@ -306,6 +433,13 @@ def create_parser(subparser):
         action="store_true",
         help="If set, adds Sharpwipereverb sound effect at the start.",
     )
+
+    parser.add_argument(
+        "-g",
+        "--glitch",
+        action="store_true",
+        help="If set, adds a glitch effect to the text.",
+    )
     return parser
 
 
@@ -344,6 +478,7 @@ class ViztoolzPlugin:
             padding=args.padding,
             expand=args.expand,
             effect=args.effect,
+            glitch=args.glitch,
             fps=args.fps,
         )
 

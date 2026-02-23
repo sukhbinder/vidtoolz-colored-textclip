@@ -29,7 +29,7 @@ type ``vid textclip --help`` to get help
 usage: vid textclip [-h] [-f FONT] [-fs FONTSIZE] [-d DURATION]
                     [-fd FADE_DURATION] [-tc TEXT_COLOR] [-bg BG_COLOR]
                     [-gc GRADIENT_COLORS] [-s SIZE] [-o OUTPUT] [--fps FPS]
-                    [-p PADDING]
+                    [-p PADDING] [-e] [-ef] [-g]
                     text
 
 Create a color clip with overlaid text
@@ -60,6 +60,9 @@ optional arguments:
   --fps FPS             Frames per second. (default: 60)
   -p PADDING, --padding PADDING
                         Padding on text (default: 30)
+  -e, --expand          If set, the text will slowly enlarge during the video.
+  -ef, --effect         If set, adds Sharpwipereverb sound effect at the start.
+  -g, --glitch          If set, adds a glitch effect to the text.
 
 ```
 

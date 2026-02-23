@@ -25,6 +25,20 @@ def test_create_parser():
     assert result.size == "1920,1080"
     assert result.output is None
     assert result.fps == 60
+    assert result.expand is False
+    assert result.effect is False
+    assert result.glitch is False
+
+
+def test_glitch_argument():
+    subparser = ArgumentParser().add_subparsers()
+    parser = w.create_parser(subparser)
+
+    result = parser.parse_args(["hello", "-g"])
+    assert result.glitch is True
+
+    result = parser.parse_args(["hello", "--glitch"])
+    assert result.glitch is True
 
 
 def test_plugin(capsys):

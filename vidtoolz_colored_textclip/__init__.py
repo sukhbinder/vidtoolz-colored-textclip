@@ -349,7 +349,7 @@ def apply_glitch_effect(clip, glitch_intensity=20, fps=60):
 
 def wrap_text_to_width(text, font, draw, max_width):
     """
-    Wrap text into multiple lines so that each line fits within max_width.
+    Wrap text into balanced lines that fit within max_width.
 
     Args:
         text (str): The text to wrap.
@@ -360,27 +360,40 @@ def wrap_text_to_width(text, font, draw, max_width):
     Returns:
         list: List of wrapped lines.
     """
-    lines = []
     words = text.split()
 
     if not words:
-        return lines
+        return []
 
-    current_line = words[0]
+    # A greedy wrap can produce a nearly full first line and a one-word last
+    # line. Find the minimum raggedness layout instead, measuring with the
+    # actual font so both line lengths and word widths are accounted for.
+    widths = {}
+    for start in range(len(words)):
+        for end in range(start + 1, len(words) + 1):
+            line = " ".join(words[start:end])
+            bbox = draw.textbbox((0, 0), line, font=font)
+            line_width = bbox[2] - bbox[0]
+            if line_width > max_width and end > start + 1:
+                break
+            widths[start, end] = line_width
 
-    for word in words[1:]:
-        test_line = current_line + " " + word
-        bbox = draw.textbbox((0, 0), test_line, font=font)
-        test_width = bbox[2] - bbox[0]
+    best = [None] * (len(words) + 1)
+    best[0] = (0, [])
+    for end in range(1, len(words) + 1):
+        for start in range(end):
+            if (start, end) not in widths or best[start] is None:
+                continue
+            slack = max_width - widths[start, end]
+            cost = best[start][0] + slack * slack
+            if best[end] is None or cost < best[end][0]:
+                best[end] = (cost, best[start][1] + [" ".join(words[start:end])])
 
-        if test_width <= max_width:
-            current_line = test_line
-        else:
-            lines.append(current_line)
-            current_line = word
-
-    lines.append(current_line)
-    return lines
+    # A single word may exceed the available width; retain it as a line, as
+    # the previous implementation did.
+    if best[-1] is None:
+        return [" ".join(words)]
+    return best[-1][1]
 
 
 def get_fitting_fontsize_multiline(

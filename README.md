@@ -28,7 +28,7 @@ type ``vid textclip --help`` to get help
 ```
 usage: vid textclip [-h] [-f FONT] [-fs FONTSIZE] [-d DURATION]
                     [-fd FADE_DURATION] [-tc TEXT_COLOR] [-bg BG_COLOR]
-                    [-gc GRADIENT_COLORS] [-s SIZE] [-o OUTPUT] [--fps FPS]
+                    [-gc GRADIENT_COLORS] [-rg] [-s SIZE] [-o OUTPUT] [--fps FPS]
                     [-p PADDING] [-e] [-ef] [-g]
                     text
 
@@ -54,6 +54,8 @@ optional arguments:
   -gc GRADIENT_COLORS, --gradient-colors GRADIENT_COLORS
                         Semicolon-separated list of R,G,B colors for the
                         gradient background. e.g. 255,0,0;0,0,255
+  -rg, --random-gradient
+                        Use a randomly generated gradient background.
   -s SIZE, --size SIZE  Video size as width,height. (default: 1920,1080)
   -o OUTPUT, --output OUTPUT
                         Output video file name. (default: None)

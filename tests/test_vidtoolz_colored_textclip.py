@@ -28,6 +28,7 @@ def test_create_parser():
     assert result.expand is False
     assert result.effect is False
     assert result.glitch is False
+    assert result.random_gradient is False
 
 
 def test_glitch_argument():
@@ -40,6 +41,43 @@ def test_glitch_argument():
     result = parser.parse_args(["hello", "--glitch"])
     assert result.glitch is True
 
+
+def test_random_gradient_argument():
+    subparser = ArgumentParser().add_subparsers()
+    parser = w.create_parser(subparser)
+
+    assert parser.parse_args(["hello", "-rg"]).random_gradient is True
+    assert parser.parse_args(["hello", "--random-gradient"]).random_gradient is True
+
+
+def test_generate_random_gradient_colors():
+    colors = w.generate_random_gradient_colors()
+
+    assert 2 <= len(colors) <= 4
+    assert all(len(color) == 3 for color in colors)
+    assert all(0 <= channel <= 255 for color in colors for channel in color)
+
+
+def test_resolve_gradient_colors_prefers_explicit_colors(monkeypatch):
+    explicit_colors = [(255, 0, 0), (0, 0, 255)]
+    monkeypatch.setattr(
+        w,
+        "generate_random_gradient_colors",
+        lambda: pytest.fail("random colors should not replace explicit colors"),
+    )
+
+    assert (
+        w.resolve_gradient_colors(explicit_colors, random_gradient=True)
+        == explicit_colors
+    )
+
+
+def test_resolve_gradient_colors_generates_random_palette(monkeypatch):
+    generated_colors = [(1, 2, 3), (4, 5, 6)]
+    monkeypatch.setattr(w, "generate_random_gradient_colors", lambda: generated_colors)
+
+    assert w.resolve_gradient_colors(random_gradient=True) == generated_colors
+    assert w.resolve_gradient_colors() is None
 
 def test_plugin(capsys):
     w.textclip_plugin.hello(None)

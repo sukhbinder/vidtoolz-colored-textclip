@@ -39,6 +39,23 @@ def create_gradient_clip(size, colors, duration):
     return ImageClip(gradient).with_duration(duration)
 
 
+def generate_random_gradient_colors():
+    """Return a random palette for a background gradient."""
+    return [
+        tuple(random.randint(0, 255) for _ in range(3))
+        for _ in range(random.randint(2, 4))
+    ]
+
+
+def resolve_gradient_colors(gradient_colors=None, random_gradient=False):
+    """Choose explicit gradient colors or generate a random palette."""
+    if gradient_colors:
+        return gradient_colors
+    if random_gradient:
+        return generate_random_gradient_colors()
+    return None
+
+
 def get_audio_clip(duration, audio_volume):
     audio_path = os.path.join(os.path.dirname(__file__), "assets", "charkha.mp3")
     audio_clip = AudioFileClip(audio_path).subclipped(0, duration)
@@ -81,6 +98,7 @@ def create_text_colorclip(
     size=(1920, 1080),
     color=(0, 0, 0),
     gradient_colors=None,
+    random_gradient=False,
     text_color="white",
     font="Arial",
     fontsize=50,
@@ -103,6 +121,8 @@ def create_text_colorclip(
         progress = min(frame / total_frames, 1.0)
         scale = 1.0 + 0.1 * progress
         return scale
+
+    gradient_colors = resolve_gradient_colors(gradient_colors, random_gradient)
 
     if gradient_colors:
         bg_clip = create_gradient_clip(size, gradient_colors, duration)
@@ -395,6 +415,12 @@ def create_parser(subparser):
         help="Semicolon-separated list of R,G,B colors for the gradient background. e.g. 255,0,0;0,0,255",
     )
     parser.add_argument(
+        "-rg",
+        "--random-gradient",
+        action="store_true",
+        help="Use a randomly generated gradient background.",
+    )
+    parser.add_argument(
         "-s",
         "--size",
         type=str,
@@ -470,6 +496,7 @@ class ViztoolzPlugin:
             size=(width, height),
             color=args.bg_color,
             gradient_colors=args.gradient_colors,
+            random_gradient=args.random_gradient,
             text_color=args.text_color,
             font=args.font,
             fontsize=fontsize,

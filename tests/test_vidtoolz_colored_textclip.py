@@ -16,6 +16,7 @@ def test_create_parser():
 
     result = parser.parse_args(["hello"])
     assert result.text == "hello"
+    assert result.content is None
     assert result.duration == 3.0
     assert result.font == default_font
     assert result.fontsize == 210
@@ -48,6 +49,32 @@ def test_random_gradient_argument():
 
     assert parser.parse_args(["hello", "-rg"]).random_gradient is True
     assert parser.parse_args(["hello", "--random-gradient"]).random_gradient is True
+
+
+def test_content_argument():
+    subparser = ArgumentParser().add_subparsers()
+    parser = w.create_parser(subparser)
+
+    result = parser.parse_args(["Main title", "--content", "Supporting text"])
+    assert result.content == "Supporting text"
+
+
+def test_longer_content_moves_title_up():
+    font = str(Path(__file__).parent / "Keyboard.ttf")
+    short_layout = w.calculate_content_layout(
+        "Main title", "Short support", (1920, 1080), font, 120, 20
+    )
+    long_layout = w.calculate_content_layout(
+        "Main title",
+        "Supporting details " * 80,
+        (1920, 1080),
+        font,
+        120,
+        20,
+    )
+
+    assert long_layout["content_height"] > short_layout["content_height"]
+    assert long_layout["top"] < short_layout["top"]
 
 
 def test_generate_random_gradient_colors():

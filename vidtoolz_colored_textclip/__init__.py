@@ -56,6 +56,55 @@ def resolve_gradient_colors(gradient_colors=None, random_gradient=False):
     return None
 
 
+def calculate_content_layout(text, content, size, font, fontsize, padding):
+    """Measure and position the title and supporting text as a centered group."""
+    width, height = size
+    available_width = width - 2 * padding
+    try:
+        title_font = ImageFont.truetype(font, fontsize)
+    except OSError:
+        title_font = ImageFont.load_default()
+
+    measure_image = Image.new("RGB", (width, 1000))
+    draw = ImageDraw.Draw(measure_image)
+    title_lines = wrap_text_to_width(text, title_font, draw, available_width)
+    title_height = max(
+        fontsize + 2 * padding,
+        len(title_lines) * int(fontsize * 1.25) + 2 * padding,
+    )
+
+    content_fontsize = max(12, int(fontsize * 0.35))
+    content_lines = None
+    content_height = 0
+    max_group_height = height - 2 * padding
+    while content_fontsize >= 12:
+        try:
+            content_font = ImageFont.truetype(font, content_fontsize)
+        except OSError:
+            content_font = ImageFont.load_default()
+        content_lines = wrap_text_to_width(content, content_font, draw, available_width)
+        content_height = max(
+            content_fontsize + 2 * padding,
+            len(content_lines) * int(content_fontsize * 1.3) + 2 * padding,
+        )
+        if title_height + content_height <= max_group_height:
+            break
+        content_fontsize -= 2
+
+    gap = max(padding, int(fontsize * 0.15))
+    group_height = title_height + gap + content_height
+    top = max(padding, (height - group_height) // 2)
+    return {
+        "title_lines": title_lines,
+        "title_height": title_height,
+        "content_lines": content_lines or [],
+        "content_fontsize": content_fontsize,
+        "content_height": content_height,
+        "gap": gap,
+        "top": top,
+    }
+
+
 def get_audio_clip(duration, audio_volume):
     audio_path = os.path.join(os.path.dirname(__file__), "assets", "charkha.mp3")
     audio_clip = AudioFileClip(audio_path).subclipped(0, duration)
@@ -110,6 +159,7 @@ def create_text_colorclip(
     effect=False,
     glitch=False,
     fps=60,
+    content=None,
 ):
     """
     Create a color clip with overlaid text, both fading in and out.
@@ -147,20 +197,60 @@ def create_text_colorclip(
     wrapped_lines = wrap_text_to_width(text, pil_font, temp_draw, available_width)
     wrapped_text = "\n".join(wrapped_lines)
 
-    text_clip = (
-        TextClip(
-            text=wrapped_text,
+    fade_effects = [vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)]
+    if content:
+        layout = calculate_content_layout(text, content, size, font, fontsize, padding)
+        title_height = layout["title_height"]
+        content_height = layout["content_height"]
+        content_fontsize = layout["content_fontsize"]
+        gap = layout["gap"]
+        top = layout["top"]
+        text_clip = TextClip(
+            text="\n".join(layout["title_lines"]),
             font_size=fontsize,
             font=font,
             color=text_color,
             margin=(padding, padding),
             method="caption",
-            size=size,
+            size=(size[0], title_height),
         )
-        .with_duration(duration)
-        .with_effects([vfx.FadeIn(fade_duration), vfx.FadeOut(fade_duration)])
-        .with_position("center")
-    )
+        text_clip = (
+            text_clip.with_duration(duration)
+            .with_effects(fade_effects)
+            .with_position(("center", top))
+        )
+        content_clip = TextClip(
+            text="\n".join(layout["content_lines"]),
+            font_size=content_fontsize,
+            font=font,
+            color=text_color,
+            margin=(padding, padding),
+            method="caption",
+            size=(size[0], content_height),
+            text_align="center",
+        )
+        content_clip = (
+            content_clip.with_duration(duration)
+            .with_effects(fade_effects)
+            .with_position(("center", top + title_height + gap))
+        )
+        text_clips = [text_clip, content_clip]
+    else:
+        text_clip = (
+            TextClip(
+                text=wrapped_text,
+                font_size=fontsize,
+                font=font,
+                color=text_color,
+                margin=(padding, padding),
+                method="caption",
+                size=size,
+            )
+            .with_duration(duration)
+            .with_effects(fade_effects)
+            .with_position("center")
+        )
+        text_clips = [text_clip]
 
     # Apply expanding effect if enabled
     if expand:
@@ -169,10 +259,11 @@ def create_text_colorclip(
             # lambda t: 1.0 + 0.1 * (round(t * fps) / (duration * fps))
             lambda t: scale_by_frame(None, t)
         )
+        text_clips[0] = text_clip
 
     bg_clip = bg_clip.with_fps(fps)
-    text_clip = text_clip.with_fps(fps)
-    final_clip = CompositeVideoClip([bg_clip, text_clip]).with_fps(fps)
+    text_clips = [clip.with_fps(fps) for clip in text_clips]
+    final_clip = CompositeVideoClip([bg_clip, *text_clips]).with_fps(fps)
     audio_clip = get_audio_clip(duration, audio_volume)
     audio_clip = audio_clip.with_fps(44100)
 
@@ -366,6 +457,12 @@ def create_parser(subparser):
     default_font = "Papyrus" if platform.system() == "Darwin" else "Arial"
     parser.add_argument("text", type=str, help="Text to display.")
     parser.add_argument(
+        "--content",
+        type=str,
+        default=None,
+        help="Optional smaller text displayed centered below the main text.",
+    )
+    parser.add_argument(
         "-f",
         "--font",
         type=str,
@@ -376,7 +473,7 @@ def create_parser(subparser):
         "-fs",
         "--fontsize",
         type=int,
-        default=210,
+        default=150,
         help="Font size. (default: %(default)s)",
     )
     parser.add_argument(
@@ -493,6 +590,7 @@ class ViztoolzPlugin:
 
         clip = create_text_colorclip(
             text=args.text,
+            content=args.content,
             size=(width, height),
             color=args.bg_color,
             gradient_colors=args.gradient_colors,

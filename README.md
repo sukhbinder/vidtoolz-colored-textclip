@@ -30,7 +30,7 @@ usage: vid textclip [-h] [-f FONT] [-fs FONTSIZE] [-d DURATION]
                     [-fd FADE_DURATION] [-tc TEXT_COLOR] [-bg BG_COLOR]
                     [-gc GRADIENT_COLORS] [-rg] [-s SIZE] [-o OUTPUT] [--fps FPS]
                     [-p PADDING] [-e] [-ef] [-g]
-                    text
+                    [--content CONTENT] text
 
 Create a color clip with overlaid text
 
@@ -38,6 +38,7 @@ positional arguments:
   text                  Text to display.
 
 optional arguments:
+  --content CONTENT     Optional smaller text centered below the main text.
   -h, --help            show this help message and exit
   -f FONT, --font FONT  Font name to use. Ex Noteworthy, Melno, Papyrus,
                         Zapfino (default: Arial)
@@ -66,6 +67,12 @@ optional arguments:
   -ef, --effect         If set, adds Sharpwipereverb sound effect at the start.
   -g, --glitch          If set, adds a glitch effect to the text.
 
+```
+
+Add a smaller supporting text block beneath the title with `--content`:
+
+```bash
+vid textclip "What is an LLM?" --content "The foundation of modern AI"
 ```
 
 ## Development

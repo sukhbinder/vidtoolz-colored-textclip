@@ -19,7 +19,7 @@ def test_create_parser():
     assert result.content is None
     assert result.duration == 3.0
     assert result.font == default_font
-    assert result.fontsize == 210
+    assert result.fontsize == 150
     assert result.text_color == "white"
     assert result.fade_duration == 0.5
     assert result.bg_color == (0, 0, 0)
